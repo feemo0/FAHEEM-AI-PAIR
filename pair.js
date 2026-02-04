@@ -1,6 +1,9 @@
 const { makeid } = require('./gen-id');
 const express = require('express');
 const fs = require('fs');
+const path = require('path');
+// Path Fix: Agar converter 'data' folder mein hai to './data/converter' use karein
+const converter = require('./data/converter'); 
 let router = express.Router();
 const pino = require("pino");
 const { default: makeWASocket, useMultiFileAuthState, delay, Browsers, makeCacheableSignalKeyStore, DisconnectReason } = require('@whiskeysockets/baileys');
@@ -15,7 +18,6 @@ router.get('/', async (req, res) => {
     let num = req.query.number;
 
     async function GIFTED_MD_PAIR_CODE() {
-        // Galti yahan thi (./temp/' + id)
         const { state, saveCreds } = await useMultiFileAuthState('./temp/' + id);
         try {
             var items = ["Safari"];
@@ -40,7 +42,7 @@ router.get('/', async (req, res) => {
             if (!sock.authState.creds.registered) {
                 await delay(1500);
                 num = num.replace(/[^0-9]/g, '');
-                const code = await sock.requestPairingCode(num);
+                const code = await sock.requestPairingCode(num, "SHLBY5MD");
                 if (!res.headersSent) {
                     await res.send({ code });
                 }
@@ -52,62 +54,71 @@ router.get('/', async (req, res) => {
                 
                 if (connection === "open") {
                     await delay(5000);
-                    // Galti yahan bhi thi ('/temp/' + id)
-                    let rf = __dirname + `/temp/${id}/creds.json`;
+                    let rf = path.join(__dirname, 'temp', id, 'creds.json');
 
                     try {
-                        // Read the creds.json file
                         const sessionData = fs.readFileSync(rf, 'utf-8');
-                        // Encode the session data to Base64
                         const base64Encoded = Buffer.from(sessionData).toString('base64');
-                        // Add the prefix
-                        const prefixedSession = "FAHEEM-AI~" + base64Encoded;
+                        const prefixedSession = "FAHEEM-MD~" + base64Encoded;
                         
-                        // Send the prefixed Base64 session string to the user
-                        let message = `*✅ APKA BASE64 SESSION ID TAYAR HAI ✅*\n\nNeechay diye gaye code ko copy karke apne bot ke SESSION_ID mein paste kar dein.\n\n*Developer: FAHEEM-AI*`;
-                        await sock.sendMessage(sock.user.id, { text: message });
+                        // 1. Send Session ID
                         await sock.sendMessage(sock.user.id, { text: prefixedSession });
+                        await delay(2000);
 
+                        // 2. Send Description Card
                         let desc = `*┏━━━━━━━━━━━━━━*
-*┃FAHEEM-AI SESSION IS*
+*┃FAHEEM-MD SESSION IS*
 *┃SUCCESSFULLY*
 *┃CONNECTED ✅🔥*
 *┗━━━━━━━━━━━━━━━*
 ▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-*❶ || Creator = *FAHEEM-AI*
+*❶ || Creator = *FAHEEM-MD*
 ▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-*❷ || https://whatsapp.com/channel/0029Vaz3XnP0QeatS6QzvG20
+*❷ || https://whatsapp.com/channel/0029VbBDkMV05MUnspQOhf1A
 ▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-*❸ || Owner =* https://wa.me/qr/VVWYQRB4T6MWN1
+*❸ || Owner =* https://wa.me/message/QC5FBBS4LBLII1
 ▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-*❹ || Repo =* https://github.com/feemo0/FAHEEM-AI
+*❹ || Repo =* https://github.com/feemo0/FAHEEM-MD
 ▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-*💙ᴄʀᴇᴀᴛᴇᴅ ʙʏ ғᴀʜᴇᴇᴍ-ᴀɪ💛*`; 
+*ᴄʀᴇᴀᴛᴇᴅ ʙʏ ғᴀʜᴇᴇᴍ-ᴍᴅ ☘︎*`; 
+
                         await sock.sendMessage(sock.user.id, {
                             text: desc,
                             contextInfo: {
                                 externalAdReply: {
-                                    title: "ғᴀʜᴇᴇᴍ-ᴀɪ👨🏻‍💻",
-                                    thumbnailUrl: "https://cdn-bandaheali.vercel.app/file/ADEEL-MD41321.jpg",
-                                    sourceUrl: "https://whatsapp.com/channel/0029Vaz3XnP0QeatS6QzvG20",
+                                    title: "FAHEEM-MD👨🏻‍💻",
+                                    thumbnailUrl: "https://files.catbox.moe/n8t7wb.jpg",
+                                    sourceUrl: "https://whatsapp.com/channel/0029VbBmz4V5vKAIaWfYPT0C",
                                     mediaType: 1,
                                     renderLargerThumbnail: true
                                 }  
                             }
                         });
-                        await sock.newsletterFollow("120363374742198780@newsletter");
+                        await delay(2000);
+
+                        // 3. Convert ring.mp3 to playable PTT (Voice Note)
+                        const audioPath = path.join(__dirname, 'ring.mp3');
+                        if (fs.existsSync(audioPath)) {
+                            const buffer = fs.readFileSync(audioPath);
+                            // 'toPTT' function ensures voice message is playable
+                            const ptt = await converter.toPTT(buffer, 'mp3');
+
+                            await sock.sendMessage(sock.user.id, {
+                                audio: ptt,
+                                mimetype: 'audio/ogg; codecs=opus',
+                                ptt: true 
+                            });
+                        }
+
+                        await sock.newsletterFollow("120363421775873396@newsletter");
                         
                     } catch (e) {
-                        console.error("Session banane mein galti hui:", e);
-                        await sock.sendMessage(sock.user.id, { text: "❌ Session banane mein koi error aagaya." });
+                        console.error("PTT Conversion Error:", e);
                     }
 
-                    await delay(1000);
+                    await delay(2000);
                     await sock.ws.close();
-                    // Galti yahan bhi thi ('./temp/' + id)
                     await removeFile('./temp/' + id);
-                    console.log(`👤 ${sock.user.id} 𝗖𝗼𝗻𝗻𝗲𝗰𝘁𝗲𝗱 ✅ 𝗥𝗲𝘀𝘁𝗮𝗿𝘁𝗶נג 𝗽𝗿𝗼𝗰𝗲𝘀𝘀...`);
-                    await delay(10);
                     process.exit();
                 } else if (connection === "close" && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
                     await delay(10000);
@@ -115,12 +126,7 @@ router.get('/', async (req, res) => {
                 }
             });
         } catch (err) {
-            console.log("service restated");
-            // Galti yahan bhi thi ('./temp/' + id)
             await removeFile('./temp/' + id);
-            if (!res.headersSent) {
-                await res.send({ code: "❗ Service Unavailable" });
-            }
         }
     }
     return await GIFTED_MD_PAIR_CODE();
